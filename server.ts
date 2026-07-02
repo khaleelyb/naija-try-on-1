@@ -111,7 +111,7 @@ Garment details for reference: ${garment.name}, ${garment.description || ''}, ${
     // 4. Call Gemini
     // Using gemini-1.5-flash as the reliable model for this task
     const result = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash-image',
       contents: [
         {
           role: 'user',
