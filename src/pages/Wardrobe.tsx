@@ -54,13 +54,20 @@ export default function Wardrobe() {
   const seedWardrobe = async () => {
     setSeeding(true);
     try {
-      const { error } = await supabase.from('garments').insert(INITIAL_GARMENTS);
-      if (error) throw error;
-      alert('Wardrobe seeded successfully!');
+      const response = await fetch('/api/seed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ garments: INITIAL_GARMENTS })
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to seed wardrobe');
+
+      alert(`Wardrobe seeded successfully with ${data.count} items!`);
       fetchGarments();
     } catch (err: any) {
       console.error('Seeding error:', err);
-      alert('Failed to seed. Make sure you have created the table in Supabase. Check console for SQL.');
+      alert(`Seeding error: ${err.message}. Make sure you have created the 'garments' table in Supabase.`);
     } finally {
       setSeeding(false);
     }
