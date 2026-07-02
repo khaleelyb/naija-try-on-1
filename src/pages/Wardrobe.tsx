@@ -1,33 +1,17 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Garment } from '../types';
-import { INITIAL_GARMENTS } from '../data/garments';
 import GarmentCard from '../components/GarmentCard';
-import { Search, Filter, Loader2, RefreshCcw } from 'lucide-react';
+import { Search, Filter, Loader2, Shirt } from 'lucide-react';
 import { motion } from 'motion/react';
-import { cn } from '../lib/utils';
 
 export default function Wardrobe() {
   const [garments, setGarments] = useState<Garment[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
-  const [seeding, setSeeding] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<'idle' | 'checking' | 'ok' | 'error'>('idle');
 
   const categories = ['All', 'Agbada', 'Ankara', 'Senator Wear', 'Kaftan', 'Gele & Aso-Oke', 'Isiagu', 'Wedding/Aso-Ebi'];
-
-  const checkConnection = async () => {
-    setConnectionStatus('checking');
-    try {
-      const { error } = await supabase.from('profiles').select('id').limit(1);
-      if (error) throw error;
-      setConnectionStatus('ok');
-    } catch (err) {
-      setConnectionStatus('error');
-      console.error('Connection error:', err);
-    }
-  };
 
   const fetchGarments = async () => {
     setLoading(true);
@@ -51,28 +35,6 @@ export default function Wardrobe() {
     fetchGarments();
   }, []);
 
-  const seedWardrobe = async () => {
-    setSeeding(true);
-    try {
-      const response = await fetch('/api/seed', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ garments: INITIAL_GARMENTS })
-      });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Failed to seed wardrobe');
-
-      alert(`Wardrobe seeded successfully with ${data.count} items!`);
-      fetchGarments();
-    } catch (err: any) {
-      console.error('Seeding error:', err);
-      alert(`Seeding error: ${err.message}. Make sure you have created the 'garments' table in Supabase.`);
-    } finally {
-      setSeeding(false);
-    }
-  };
-
   const filteredGarments = garments.filter(g => {
     const matchesSearch = g.name.toLowerCase().includes(search.toLowerCase()) || 
                           g.category.toLowerCase().includes(search.toLowerCase());
@@ -85,22 +47,7 @@ export default function Wardrobe() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-2">
           <h1 className="text-4xl font-bold font-display">Wardrobe</h1>
-          <div className="flex items-center space-x-2">
-            <p className="text-stone-500">Discover authentic Nigerian styles for your virtual try-on.</p>
-            <button 
-              onClick={checkConnection}
-              className={cn(
-                "text-[10px] px-2 py-0.5 rounded-full font-bold transition-all",
-                connectionStatus === 'ok' ? "bg-emerald-100 text-emerald-700" :
-                connectionStatus === 'error' ? "bg-red-100 text-red-700" :
-                "bg-stone-100 text-stone-500 hover:bg-stone-200"
-              )}
-            >
-              {connectionStatus === 'checking' ? 'Checking...' : 
-               connectionStatus === 'ok' ? 'Database Connected' : 
-               connectionStatus === 'error' ? 'Database Error' : 'Check Database'}
-            </button>
-          </div>
+          <p className="text-stone-500">Discover authentic Nigerian styles for your virtual try-on.</p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4">
@@ -146,65 +93,15 @@ export default function Wardrobe() {
           ))}
         </div>
       ) : (
-        <div className="bg-stone-100 rounded-3xl p-12 text-center space-y-6">
+        <div className="bg-stone-100 rounded-3xl p-12 text-center space-y-4">
           <div className="w-20 h-20 bg-stone-200 rounded-full flex items-center justify-center mx-auto">
-            <RefreshCcw className="w-10 h-10 text-stone-400" />
+            <Shirt className="w-10 h-10 text-stone-400" />
           </div>
           <div className="space-y-2">
-            <h3 className="text-xl font-bold">No Garments Found</h3>
+            <h3 className="text-xl font-bold">New Styles Coming Soon</h3>
             <p className="text-stone-500 max-w-md mx-auto">
-              Your wardrobe is currently empty. You can seed it with initial designs to get started.
+              We're adding fresh Nigerian styles to the wardrobe. Check back shortly!
             </p>
-          </div>
-          <button
-            onClick={seedWardrobe}
-            disabled={seeding}
-            className="bg-nigeria-green text-white px-8 py-3 rounded-xl font-bold hover:bg-emerald-800 transition-colors disabled:opacity-50 inline-flex items-center"
-          >
-            {seeding ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
-            Seed Wardrobe Data
-          </button>
-        </div>
-      )}
-
-      {/* SQL Script info for the user if they haven't set up Supabase */}
-      {garments.length === 0 && !loading && (
-        <div className="mt-20 p-6 bg-stone-900 rounded-2xl text-white overflow-hidden relative">
-          <div className="relative z-10 space-y-4">
-            <h4 className="text-gold font-bold">Quick Setup Guide</h4>
-            <p className="text-sm text-stone-400">
-              To use this app, follow these steps in your Supabase dashboard:
-            </p>
-            <div className="space-y-4">
-              <div className="space-y-1">
-                <p className="text-xs font-bold text-stone-300">1. Create SQL Tables</p>
-                <pre className="text-[10px] bg-black/50 p-4 rounded-lg overflow-x-auto text-emerald-400">
-{`-- Create tables and policies
-create table profiles ( id uuid references auth.users primary key, full_name text, credits int default 3, created_at timestamptz default now() );
-create table garments ( id uuid primary key default gen_random_uuid(), name text not null, category text not null, description text, fabric_type text, color_details text, reference_image_url text not null, price_credits int default 1, is_active boolean default true, created_at timestamptz default now() );
-create table tryon_history ( id uuid primary key default gen_random_uuid(), user_id uuid references profiles(id), garment_id uuid references garments(id), user_photo_url text not null, result_image_url text, status text default 'pending', created_at timestamptz default now() );
-
-alter table profiles enable row level security;
-alter table garments enable row level security;
-alter table tryon_history enable row level security;
-
-create policy "Public read garments" on garments for select using (true);
-create policy "Allow insert garments" on garments for insert with check (true);
-create policy "Users can view own profile" on profiles for select using (auth.uid() = id);
-create policy "Users can update own profile" on profiles for update using (auth.uid() = id);
-create policy "Users can view own history" on tryon_history for select using (auth.uid() = user_id);
-create policy "Users can insert own history" on tryon_history for insert with check (auth.uid() = user_id);`}
-                </pre>
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-bold text-stone-300">2. Create Storage Buckets</p>
-                <ul className="text-[10px] text-stone-400 list-disc ml-4">
-                  <li><strong>user-photos</strong> (Private)</li>
-                  <li><strong>tryon-results</strong> (Private)</li>
-                  <li><strong>garment-references</strong> (Public)</li>
-                </ul>
-              </div>
-            </div>
           </div>
         </div>
       )}
