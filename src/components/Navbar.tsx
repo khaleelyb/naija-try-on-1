@@ -1,17 +1,32 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Shirt, Image as ImageIcon, Wallet, User, Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { Shirt, Image as ImageIcon, Wallet, User, Menu, X, Settings } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { cn } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 
 export default function Navbar({ session }: { session: any }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const location = useLocation();
+
+  useEffect(() => {
+    if (!session?.user) {
+      setIsAdmin(false);
+      return;
+    }
+    supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', session.user.id)
+      .single()
+      .then(({ data }) => setIsAdmin(!!data?.is_admin));
+  }, [session]);
 
   const navItems = [
     { name: 'Wardrobe', href: '/wardrobe', icon: Shirt },
     { name: 'Gallery', href: '/gallery', icon: ImageIcon },
     { name: 'Wallet', href: '/wallet', icon: Wallet },
+    ...(isAdmin ? [{ name: 'Admin', href: '/admin/garments', icon: Settings }] : []),
   ];
 
   const handleSignOut = async () => {
