@@ -4,6 +4,7 @@ export interface Profile {
   phone: string | null;
   avatar_url: string | null;
   credits: number;
+  is_admin: boolean;
   created_at: string;
 }
 
