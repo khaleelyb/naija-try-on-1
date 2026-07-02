@@ -7,6 +7,7 @@ import Wardrobe from './pages/Wardrobe';
 import TryOn from './pages/TryOn';
 import Gallery from './pages/Gallery';
 import Wallet from './pages/Wallet';
+import AdminGarments from './pages/AdminGarments';
 import Navbar from './components/Navbar';
 
 export default function App() {
@@ -67,6 +68,7 @@ export default function App() {
           <Route path="/tryon/:garmentId" element={session ? <TryOn /> : <Navigate to="/auth" />} />
           <Route path="/gallery" element={session ? <Gallery /> : <Navigate to="/auth" />} />
           <Route path="/wallet" element={session ? <Wallet /> : <Navigate to="/auth" />} />
+          <Route path="/admin/garments" element={session ? <AdminGarments /> : <Navigate to="/auth" />} />
         </Routes>
       </main>
     </div>
