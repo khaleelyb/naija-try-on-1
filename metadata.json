@@ -1,0 +1,8 @@
+{
+  "name": "Naija TryOn",
+  "description": "A virtual try-on platform for Nigerian traditional clothing using AI image generation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
