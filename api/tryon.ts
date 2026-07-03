@@ -2,19 +2,26 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenAI } from '@google/genai';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseAdmin = createClient(
-  process.env.VITE_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
-
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY as string,
-});
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  // Validate required env vars up front so a missing one returns clean JSON
+  // instead of crashing the function during client construction.
+  const missing = ['VITE_SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'GEMINI_API_KEY'].filter(
+    (key) => !process.env[key]
+  );
+  if (missing.length > 0) {
+    console.error('Missing required env vars:', missing);
+    return res.status(500).json({ error: `Server misconfigured: missing ${missing.join(', ')}` });
+  }
+
+  const supabaseAdmin = createClient(
+    process.env.VITE_SUPABASE_URL as string,
+    process.env.SUPABASE_SERVICE_ROLE_KEY as string
+  );
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
 
   try {
     const { userId, userPhotoUrl, garmentId } = req.body;
