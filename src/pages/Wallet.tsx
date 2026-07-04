@@ -58,39 +58,44 @@ export default function Wallet() {
         return;
       }
 
+      const verifyPayment = async (response: any) => {
+        try {
+          const verifyRes = await fetch('/api/paystack/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              reference: response.reference,
+              userId: user.id,
+              packId: pack.id
+            })
+          });
+
+          const verifyData = await verifyRes.json();
+          if (verifyData.success) {
+            setCredits(verifyData.newBalance);
+            alert('Payment successful! Credits added to your account.');
+            fetchData();
+          } else {
+            alert('Payment verification failed.');
+          }
+        } catch (err) {
+          console.error('Payment verification error:', err);
+          alert('Error verifying payment.');
+        } finally {
+          setPurchasingPack(null);
+        }
+      };
+
       try {
         const handler = PaystackPop.setup({
           key: publicKey,
           email: user.email,
           amount: pack.price * 100, // Paystack expects amount in Kobo
           currency: 'NGN',
-          callback: async (response: any) => {
-            // Verify on backend
-            try {
-              const verifyRes = await fetch('/api/paystack/verify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  reference: response.reference,
-                  userId: user.id,
-                  packId: pack.id
-                })
-              });
-
-              const verifyData = await verifyRes.json();
-              if (verifyData.success) {
-                setCredits(verifyData.newBalance);
-                alert('Payment successful! Credits added to your account.');
-                fetchData();
-              } else {
-                alert('Payment verification failed.');
-              }
-            } catch (err) {
-              console.error('Payment verification error:', err);
-              alert('Error verifying payment.');
-            } finally {
-              setPurchasingPack(null);
-            }
+          callback: function (response: any) {
+            // Must be a plain (non-async) function — Paystack's v1 inline.js
+            // rejects async functions in its internal type validation.
+            verifyPayment(response);
           },
           onClose: () => {
             setPurchasingPack(null);
